@@ -1,0 +1,9 @@
+
+switch:
+  - name: "pumpe 1"
+    id: pumpe_1
+    platform: gpio
+    pin:
+      number: GPIO0
+      inverted: true
+    restore_mode: RESTORE_DEFAULT_OFF
