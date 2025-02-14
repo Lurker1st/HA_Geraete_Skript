@@ -1,0 +1,66 @@
+
+sensor:
+  - platform: adc
+    pin: A0
+    id: ph_sensor_1
+    name: "pH Sensor"
+    update_interval: 1s
+    unit_of_measurement: pH
+    filters:
+      - median:
+          window_size: 7
+          send_every: 4
+          send_first_at: 3
+    # Der Rohwert des pH-Sensors wird hier einfach als Spannung gelesen
+    # Wir berechnen den pH-Wert später in einem eigenen Sensor
+
+  # Berechnung des pH-Werts unter Verwendung der dynamischen Kalibrierung
+  - platform: template
+    name: "Calculated pH"
+    id: calculated_ph
+    unit_of_measurement: "pH"
+    update_interval: 10s  # Wird alle 10 Sekunden aktualisiert
+    lambda: |-
+      // Berechne die Spannung des pH-Sensors
+      float sensor_voltage = id(ph_sensor_1).state * 3.3 / 1024.0;  // Beispiel: Umrechnung von ADC-Wert auf Spannung (3.3V und 10-bit ADC)
+      
+      // Lese die Kalibrierungsspannungen
+      float v_4 = id(v_cal_4).state;  // Kalibrierungsspannung für pH 4.0
+      float v_7 = id(v_cal_7).state;  // Kalibrierungsspannung für pH 7.0
+
+      // Berechne den pH-Wert mit linearer Interpolation
+      float pH = 7.0 + ((sensor_voltage - v_7) * (4.0 - 7.0)) / (v_4 - v_7);
+
+      return pH;  // Gebe den berechneten pH-Wert zurück
+
+# Template für die Kalibrierungsspannungen (dynamische Werte)
+number:
+  - name: "V_cal_4"
+    id: v_cal_4
+    platform: template
+    max_value: 100
+    min_value: -100
+    step: 0.01
+    mode: box
+    optimistic: true
+    restore_value: true
+
+  - name: "V_cal_7"
+    id: v_cal_7
+    platform: template
+    max_value: 100
+    min_value: -100
+    step: 0.01
+    mode: box
+    optimistic: true
+    restore_value: true
+
+# Interval-Block, der alle 10 Sekunden die Kalibrierungswerte für V_cal_4 und V_cal_7 aktualisiert
+interval:
+  - interval: 10s
+    then:
+      # Ändere die Kalibrierwerte hier dynamisch nach deinen Wünschen
+      - lambda: |-
+          // Setze hier die neuen Spannungswerte für v_cal_4 und v_cal_7
+          id(v_cal_4).publish_state(0.68);  // Beispielwert für v_cal_4
+          id(v_cal_7).publish_state(0.75);  // Beispielwert für v_cal_7
