@@ -1,0 +1,84 @@
+# Example configuration entry
+stepper:
+  - platform: uln2003
+    id: my_stepper
+    pin_a: GPIO16
+    pin_b: GPIO17
+    pin_c: GPIO25
+    pin_d: GPIO26
+    max_speed: 100 steps/s
+    step_mode: HALF_STEP
+
+number:
+  - platform: template
+    name: "schritteingabe"
+    id: schritteingabe
+    step: 1
+    min_value: -1000999999990
+    max_value: 100009999999999999999999999999999999999
+    mode: box
+    optimistic: true
+    restore_value: true
+ # kalibrieren
+  - name: kal_zeit1
+    id: kal_zeit_1
+    platform: template
+    step: 1
+    min_value: -1000999999990
+    max_value: 100009999999999999999999999999999999999
+    mode: box
+    optimistic: true
+    restore_value: true
+  - name: kal_umdrehungen_1
+    id: kal_umdrehungen_1
+    platform: template
+    step: 1
+    min_value: -1000999999990
+    max_value: 100009999999999999999999999999999999999
+    mode: box
+    optimistic: true
+    restore_value: true
+  - name: kal_menge_1
+    id: kal_menge_1
+    platform: template
+    step: 1
+    min_value: -1000999999990
+    max_value: 100009999999999999999999999999999999999
+    mode: box
+    optimistic: true
+    restore_value: true
+  - name: geschwindigkeit
+    id: geschwindigkeit
+    platform: template
+    step: 1
+    min_value: -1000999999990
+    max_value: 100009999999999999999999999999999999999
+    mode: box
+    optimistic: true
+    restore_value: true
+
+button:
+  - platform: template
+    name: "motordreher"
+    on_press:
+      - stepper.report_position:
+          id: my_stepper
+          position: 0
+      - stepper.set_target:
+          id: my_stepper
+          target: !lambda "return (int) id(schritteingabe).state;"
+  - platform: template
+    name: "kalibrieren motor 1"
+    on_press:
+      - stepper.report_position:
+          id: my_stepper
+          position: 0
+      - stepper.set_target:
+          id: my_stepper
+          target: !lambda "return (int) id(kal_umdrehungen_1).state;"
+
+interval:
+  - interval: 10 s
+    then:
+      - lambda: |-
+         id(my_stepper).set_max_speed(id(geschwindigkeit).state);
